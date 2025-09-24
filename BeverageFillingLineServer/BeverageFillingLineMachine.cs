@@ -2,7 +2,7 @@ namespace BeverageFillingLineServer
 {
     public class BeverageFillingLineMachine
     {
-        private Random m_random = new Random();
+        private Random _random = new Random();
 
         // Machine Identification
         public string MachineName { get; set; } = "FluidFill Express #2";
@@ -64,8 +64,8 @@ namespace BeverageFillingLineServer
 
         // Alarm system
         public List<string> ActiveAlarms { get; set; } = new List<string>();
-        private List<AlarmHistory> m_alarmHistory = new List<AlarmHistory>();
-        private int m_cycleCount = 0;
+        private List<AlarmHistory> _alarmHistory = new List<AlarmHistory>();
+        private int _cycleCount = 0;
 
         private class AlarmHistory
         {
@@ -83,15 +83,15 @@ namespace BeverageFillingLineServer
                 return;
             }
 
-            m_cycleCount++;
+            _cycleCount++;
 
             // Simulate realistic variations in actual values
-            ActualFillVolume = TargetFillVolume + (m_random.NextDouble() - 0.5) * 4.0;
-            ActualLineSpeed = TargetLineSpeed + (m_random.NextDouble() - 0.5) * 10.0;
-            ActualProductTemperature = TargetProductTemperature + (m_random.NextDouble() - 0.5) * 1.0;
-            ActualCO2Pressure = TargetCO2Pressure + (m_random.NextDouble() - 0.5) * 0.1;
-            ActualCapTorque = TargetCapTorque + (m_random.NextDouble() - 0.5) * 2.0;
-            ActualCycleTime = TargetCycleTime + (m_random.NextDouble() - 0.5) * 0.2;
+            ActualFillVolume = TargetFillVolume + (_random.NextDouble() - 0.5) * 4.0;
+            ActualLineSpeed = TargetLineSpeed + (_random.NextDouble() - 0.5) * 10.0;
+            ActualProductTemperature = TargetProductTemperature + (_random.NextDouble() - 0.5) * 1.0;
+            ActualCO2Pressure = TargetCO2Pressure + (_random.NextDouble() - 0.5) * 0.1;
+            ActualCapTorque = TargetCapTorque + (_random.NextDouble() - 0.5) * 2.0;
+            ActualCycleTime = TargetCycleTime + (_random.NextDouble() - 0.5) * 0.2;
 
             // Slowly decrease tank level
             ProductLevelTank = Math.Max(10.0, ProductLevelTank - 0.01);
@@ -140,11 +140,11 @@ namespace BeverageFillingLineServer
                 Timestamp = DateTime.Now
             };
 
-            m_alarmHistory.Add(history);
+            _alarmHistory.Add(history);
 
             // Keep only last 10 cycles for each parameter
-            m_alarmHistory.RemoveAll(h => h.Parameter == parameter &&
-                m_alarmHistory.Count(x => x.Parameter == parameter) > 10);
+            _alarmHistory.RemoveAll(h => h.Parameter == parameter &&
+                _alarmHistory.Count(x => x.Parameter == parameter) > 10);
         }
 
         private void CheckSpecialAlarms()
@@ -186,7 +186,7 @@ namespace BeverageFillingLineServer
 
             foreach (var param in parameters)
             {
-                var recentHistory = m_alarmHistory.Where(h => h.Parameter == param).OrderByDescending(h => h.Timestamp).Take(3).ToList();
+                var recentHistory = _alarmHistory.Where(h => h.Parameter == param).OrderByDescending(h => h.Timestamp).Take(3).ToList();
 
                 if (recentHistory.Count >= 3)
                 {
@@ -218,7 +218,6 @@ namespace BeverageFillingLineServer
             {
                 MachineStatus = "Starting";
                 Task.Delay(3000).ContinueWith(_ => MachineStatus = "Running");
-                Console.WriteLine("Machine starting...");
             }
         }
 
@@ -228,7 +227,6 @@ namespace BeverageFillingLineServer
             {
                 MachineStatus = "Stopping";
                 Task.Delay(3000).ContinueWith(_ => MachineStatus = "Stopped");
-                Console.WriteLine("Machine stopping...");
             }
         }
 
@@ -249,14 +247,11 @@ namespace BeverageFillingLineServer
             // Reset order counters
             GoodBottlesOrder = 0;
             BadBottlesOrder = 0;
-
-            Console.WriteLine($"Production order {orderNumber} loaded for article {article}");
         }
 
         public void EnterMaintenanceMode()
         {
             MachineStatus = "Maintenance";
-            Console.WriteLine("Machine entered maintenance mode");
         }
 
         public void StartCIPCycle()
@@ -264,12 +259,10 @@ namespace BeverageFillingLineServer
             if (MachineStatus == "Stopped" || MachineStatus == "Maintenance")
             {
                 CleaningCycleStatus = "CIP Active";
-                Console.WriteLine("Clean-in-Place cycle initiated");
 
                 // Simulate CIP cycle duration
                 Task.Delay(60000).ContinueWith(_ => {
                     CleaningCycleStatus = "Normal Production";
-                    Console.WriteLine("CIP cycle completed");
                 });
             }
         }
@@ -279,12 +272,10 @@ namespace BeverageFillingLineServer
             if (MachineStatus == "Stopped" || MachineStatus == "Maintenance")
             {
                 CleaningCycleStatus = "SIP Active";
-                Console.WriteLine("Sterilize-in-Place cycle initiated");
 
                 // Simulate SIP cycle duration
                 Task.Delay(90000).ContinueWith(_ => {
                     CleaningCycleStatus = "Normal Production";
-                    Console.WriteLine("SIP cycle completed");
                 });
             }
         }
@@ -296,14 +287,11 @@ namespace BeverageFillingLineServer
             BadBottlesWeight = 0;
             BadBottlesCap = 0;
             BadBottlesOther = 0;
-            Console.WriteLine("All counters have been reset");
         }
 
         public void ChangeProduct(string newArticle, double newTargetFillVolume,
             double newTargetProductTemp, double newTargetCO2Pressure)
         {
-            Console.WriteLine($"Initiating product changeover from {Article} to {newArticle}");
-
             // Simulate line purging and changeover
             MachineStatus = "Maintenance";
             CleaningCycleStatus = "Sanitizing";
@@ -315,7 +303,6 @@ namespace BeverageFillingLineServer
                 TargetCO2Pressure = newTargetCO2Pressure;
                 CleaningCycleStatus = "Normal Production";
                 MachineStatus = "Stopped";
-                Console.WriteLine($"Product changeover to {newArticle} completed");
             });
         }
 
@@ -324,11 +311,6 @@ namespace BeverageFillingLineServer
             if (Math.Abs(newFillVolume - TargetFillVolume) <= TargetFillVolume * 0.05) // Within 5%
             {
                 TargetFillVolume = newFillVolume;
-                Console.WriteLine($"Fill volume adjusted to {newFillVolume:F1} ml");
-            }
-            else
-            {
-                Console.WriteLine($"Fill volume adjustment rejected - exceeds 5% range");
             }
         }
 
@@ -337,7 +319,6 @@ namespace BeverageFillingLineServer
             var now = DateTime.Now;
             var newLotNumber = $"LOT-{now:yyyy}-{Article?.Split('-')[1] ?? "UNK"}-{now:MMdd}{now.Hour:D2}";
             CurrentLotNumber = newLotNumber;
-            Console.WriteLine($"New lot number generated: {newLotNumber}");
             return newLotNumber;
         }
 
@@ -345,7 +326,6 @@ namespace BeverageFillingLineServer
         {
             MachineStatus = "Error";
             ActiveAlarms.Add("EMERGENCY STOP ACTIVATED - Manual intervention required");
-            Console.WriteLine("EMERGENCY STOP - All filling operations halted immediately");
         }
     }
 }
