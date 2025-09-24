@@ -26,7 +26,7 @@ dotnet run
 
 The server will start on `opc.tcp://localhost:4840`
 
-## 🔧 UaExpert Setup
+## UaExpert Setup
 
 ### Connection Configuration
 1. **Open UaExpert**
