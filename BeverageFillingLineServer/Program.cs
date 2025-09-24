@@ -1,4 +1,6 @@
-﻿using Opc.Ua;
+using Opc.Ua;
+using Opc.Ua.Configuration;
+using Opc.Ua.Server;
 
 namespace BeverageFillingLineServer
 {
@@ -6,93 +8,97 @@ namespace BeverageFillingLineServer
     {
         public static async Task Main(string[] args)
         {
-            Console.WriteLine("Starting Beverage Filling Line Server...");          
+            Console.WriteLine("Starting Beverage Filling Line Server...");
 
             try
             {
-                // Create application instance
-                ApplicationInstance application = new ApplicationInstance
+                var application = new ApplicationInstance
                 {
                     ApplicationName = "Beverage Filling Line Server",
-                    ApplicationType = ApplicationType.Server,
-                    ConfigSectionName = "BeverageFillingLineServer"
+                    ApplicationType = ApplicationType.Server
                 };
 
-                // Create server configuration
-                var config = CreateServerConfiguration();
-                
-                // Process the command line and load the application configuration.
-                bool haveAppCertificate = await application.CheckApplicationInstanceCertificate(false, 0);
-                
-                // Create the server
-                var server = new BeverageFillingLineServer();
-                
-                // Start the server
+                var config = new ApplicationConfiguration
+                {
+                    ApplicationName = "Beverage Filling Line Server",
+                    ApplicationUri = "urn:localhost:BeverageFillingLineServer",
+                    ApplicationType = ApplicationType.Server,
+
+                    ServerConfiguration = new ServerConfiguration
+                    {
+                        BaseAddresses = new StringCollection { "opc.tcp://localhost:4840" },
+                        SecurityPolicies = new ServerSecurityPolicyCollection
+                        {
+                            new ServerSecurityPolicy
+                            {
+                                SecurityMode = MessageSecurityMode.None,
+                                SecurityPolicyUri = SecurityPolicies.None
+                            }
+                        }
+                    },
+
+                    SecurityConfiguration = new SecurityConfiguration
+                    {
+                        AutoAcceptUntrustedCertificates = true
+                    },
+
+                    CertificateValidator = new CertificateValidator()
+                };
+
+                config.CertificateValidator.CertificateValidation += (s, e) => { e.Accept = true; };
+                application.ApplicationConfiguration = config;
+
+                // Create a simple server directly
+                var server = new SimpleServer();
                 await application.Start(server);
 
                 Console.WriteLine("Server started at: opc.tcp://localhost:4840");
                 Console.WriteLine("Press any key to exit...");
                 Console.ReadKey();
 
-                // Stop the server
                 server.Stop();
-            }
-            catch (ServiceResultException ex)
-            {
-                Console.WriteLine($"OPC UA Service Error: {ex.Message}");
-                Console.WriteLine($"Status Code: {ex.StatusCode}");
-                Console.WriteLine($"Inner Result: {ex.InnerResult}");
-                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-                Console.WriteLine("Press any key to exit...");
-                Console.ReadKey();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"General Error: {ex.Message}");
-                Console.WriteLine($"Exception Type: {ex.GetType().Name}");
+                Console.WriteLine($"Error: {ex.Message}");
                 Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-                Console.WriteLine("Press any key to exit...");
                 Console.ReadKey();
             }
         }
+    }
 
-        private static ApplicationConfiguration CreateServerConfiguration()
+    public class SimpleServer : StandardServer
+    {
+        protected override ServerProperties LoadServerProperties()
         {
-            var config = new ApplicationConfiguration()
+            return new ServerProperties
             {
-                ApplicationName = "Beverage Filling Line Server",
-                ApplicationUri = "urn:localhost:BeverageFillingLineServer",
-                ApplicationType = ApplicationType.Server,
-
-                ServerConfiguration = new ServerConfiguration()
-                {
-                    BaseAddresses = new StringCollection { "opc.tcp://localhost:4840" },
-                    SecurityPolicies = new ServerSecurityPolicyCollection()
-                    {
-                        new ServerSecurityPolicy()
-                        {
-                            SecurityMode = MessageSecurityMode.None,
-                            SecurityPolicyUri = SecurityPolicies.None
-                        }
-                    },
-                    UserTokenPolicies = new UserTokenPolicyCollection()
-                    {
-                        new UserTokenPolicy(UserTokenType.Anonymous)                       
-                    }
-                },
-
-                SecurityConfiguration = new SecurityConfiguration
-                {
-                    AutoAcceptUntrustedCertificates = true
-                },
-                
-                TraceConfiguration = new TraceConfiguration()
+                ManufacturerName = "FluidFill Systems",
+                ProductName = "FluidFill Express Simulator",
+                SoftwareVersion = "1.0.0",
+                BuildNumber = "1",
+                BuildDate = DateTime.Now
             };
+        }
 
-            // This is critical - StandardServer requires a certificate validator
-            config.CertificateValidator = new CertificateValidator();
+        protected override MasterNodeManager CreateMasterNodeManager(IServerInternal server, ApplicationConfiguration configuration)
+        {
+            Console.WriteLine("Creating master node manager...");
 
-            return config;
+            try
+            {
+                // Try with simple node manager first
+                var nodeManager = new SimpleNodeManager(server, configuration);
+                var masterNodeManager = new MasterNodeManager(server, configuration, null, nodeManager);
+                Console.WriteLine("Simple node manager created successfully");
+                return masterNodeManager;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error creating node manager: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                throw;
+            }
         }
     }
 }
