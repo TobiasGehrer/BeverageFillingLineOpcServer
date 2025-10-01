@@ -38,7 +38,7 @@ namespace BeverageFillingLineServer
                         {
                             new UserTokenPolicy(UserTokenType.Anonymous)
                         },
-                        MaxSessionCount = 1,
+                        MaxSessionCount = 10,
                         MaxSessionTimeout = 30000,
                         MinRequestThreadCount = 1,
                         MaxRequestThreadCount = 1,

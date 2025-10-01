@@ -24,7 +24,7 @@ namespace BeverageFillingLineServer
                 LoadPredefinedNodes(SystemContext, externalReferences);
 
                 // Start updating OPC variables
-                _updateTimer = new Timer(UpdateOpcVariables, null, 2500, 3000);
+                _updateTimer = new Timer(UpdateOpcVariables, null, 0, 3000);
             }
         }
 
