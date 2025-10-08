@@ -123,10 +123,11 @@ namespace BeverageFillingLineServer
             CheckParameterDeviations();
 
             // If any alarms are active, set machine status to Error
-            if (ActiveAlarms.Count > 0)
-            {
-                MachineStatus = "Error";
-            }
+            // Removed: Because the whole simulation stopped updating values when in Error state
+            //if (ActiveAlarms.Count > 0)
+            //{
+            //    MachineStatus = "Error";
+            //}
         }
 
         private void RecordCycleData(string parameter, double actual, double target)
